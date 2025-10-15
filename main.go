@@ -1,18 +1,42 @@
 package main
 
 import (
-	"os"
 	"context"
 	"fmt"
-	"log"
 	"google.golang.org/genai"
+	"io"
+	"log"
+	"os"
 )
 
 func main() {
-	input := os.Args[1]
+	var input string
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatalf("Failed to get stdin info: %v", err)
+	}
+
+	if err != nil {
+		log.Fatalf("Error reading from stdin: %v", err)
+	}
+
+	isPiped := (stat.Mode() & os.ModeCharDevice) == 0
+	if isPiped {
+		piped, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatalf("Error reading from stdin: %v", err)
+		}
+		input += string(piped) + " "
+	}
+
+	if len(os.Args) > 1 {
+		input += os.Args[1]
+	}
+
 	if input == "" {
 		log.Fatal("Please provide an input text as a command line argument.")
 	}
+
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, nil)
 
@@ -32,4 +56,3 @@ func main() {
 		fmt.Print(result.Candidates[0].Content.Parts[0].Text)
 	}
 }
-
